@@ -1,4 +1,9 @@
-﻿<# 9/7/21 - Version 1.2: 
+﻿<# Randy's Mod Consumer
+
+    For the things you will see in this script, I apologize. It was the first in a long list. I promise I'm getting better.
+
+
+9/7/21 - Version 1.2: 
     Fixed error allowing invalid mission date time to be uploaded
     Updated logic to move any uploaded zip to Archive before proceeding
 #>

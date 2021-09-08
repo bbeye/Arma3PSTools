@@ -1,7 +1,9 @@
 ﻿<#
 Start arma script
 
-example: Start_Arma_V1.ps1 17th_operations 2302 Automatic
+example: 
+
+Start_Arma_V1.ps1 17th_operations 2302 Automatic
 
 Input Parameters:
     LaunchID (This is the server name to set Config and Profile Data) ex: #17th_operations,17th_training
@@ -11,6 +13,11 @@ Input Parameters:
 Authored by Randy, with contributions from StackOverflow    
 
 #>
+
+#Default Values
+$LaunchID=
+$Port=2302
+$RunType=Automatic
 
 $LaunchID=$args[0] 
 $Port=$args[1] 
@@ -22,13 +29,14 @@ $serverExeName="arma3server.exe"                                         #64-bit
 $ArmaPath="D:\Arma3\servers\$LaunchID"                                   #Executable location
 $serverConfigPath="D:\Arma3\configs\$LaunchID\$($LaunchID)_server.cfg"   #Server Config File Path
 $basicConfigPath="D:\Arma3\configs\$LaunchID\$($LaunchID)_basic.cfg"     #Basic Config File Path
-$ProfilesPath="D:\Arma3\profiles\$LaunchID"                              #Profiles location
+$ProfilesPath="D:\Arma3\profiles\$LaunchID"                              #Profiles/Logs location
+
 
 # Server Mods
 $ServerMods="@asm;@AdvancedTowing;@AdvancedSlingloading;@DisableBI;@R3"
 $HeadlessMods="@asm"
 
-#
+<#
 #
 #
 #TEST VARIABLES#
@@ -37,8 +45,27 @@ $port=2302 #,2402,2602,2702
 $RunType="Automatic" #$args[2] #'Automatic','DateAware','SpecificModlist'
 #
 #
-#
+#>
 
+
+#Verifying no other sessions exist
+    $PriorityFilter="%$LaunchID\\arma3server.exe"
+    $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
+    $runningInstances = @(Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"")
+    if ($runningInstances.Count -ne 0) 
+    {
+        $a = new-object -comobject wscript.shell 
+        $intAnswer = $a.popup("There are " + $runningInstances.count + " instances running for $LaunchID. Kill? Timeout in 10 seconds",10,"Title",4)
+        if ($intAnswer -eq 7) 
+        {
+        #exit
+        } 
+        else 
+        {
+        #Stop-Process -id $processID
+        Get-Process -id $processID
+        }
+    }
 
 #Mod list
 function Get-Modlist {
