@@ -2,7 +2,7 @@
 #$shadowModNumber=2414840966
 
 
-function Get-Modlist {
+function Build-Modlist {
     Param(
         [Parameter(Mandatory=$true)]
         [string[]]

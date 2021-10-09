@@ -15,21 +15,21 @@ Authored by Randy, with contributions from StackOverflow
 #>
 
 #Default Values
-$LaunchID=
-$Port=2302
-$RunType=Automatic
+$LaunchID="jtfa_ops"
+$Port="2302"
+$RunType="Automatic"
 
 $LaunchID=$args[0] 
 $Port=$args[1] 
 $RunType=$args[2] 
 
 $Date = (Get-Date -Format yyyyMMdd)
-$RepoPath="D:\SteamCMD.GUI\steamapps\workshop\content\107410\"           #Mods location
-$serverExeName="arma3server.exe"                                         #64-bit version would be arma3server_x64.exe
-$ArmaPath="D:\Arma3\servers\$LaunchID"                                   #Executable location
-$serverConfigPath="D:\Arma3\configs\$LaunchID\$($LaunchID)_server.cfg"   #Server Config File Path
-$basicConfigPath="D:\Arma3\configs\$LaunchID\$($LaunchID)_basic.cfg"     #Basic Config File Path
-$ProfilesPath="D:\Arma3\profiles\$LaunchID"                              #Profiles/Logs location
+$RepoPath=           "D:\SteamCMD.GUI\steamapps\workshop\content\107410\"           #Mods location
+$serverExeName=      "arma3server.exe"                                         #64-bit version would be arma3server_x64.exe
+$ArmaPath=           "D:\Arma3\servers\$LaunchID"                                   #Executable location
+$serverConfigPath=   "D:\Arma3\configs\$LaunchID\$($LaunchID)_server.cfg"   #Server Config File Path
+$basicConfigPath=    "D:\Arma3\configs\$LaunchID\$($LaunchID)_basic.cfg"     #Basic Config File Path
+$ProfilesPath=       "D:\Arma3\profiles\$LaunchID"                              #Profiles/Logs location
 
 
 # Server Mods

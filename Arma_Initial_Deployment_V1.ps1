@@ -1,4 +1,7 @@
-﻿<# WHERE ARE WE INSTALLING THINGS?#>
+﻿
+if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) { Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs; exit }
+
+<# WHERE ARE WE INSTALLING THINGS?#>
 
 DO {
     if ((Test-Path $armaDir -errorAction SilentlyContinue) -eq $false) 
