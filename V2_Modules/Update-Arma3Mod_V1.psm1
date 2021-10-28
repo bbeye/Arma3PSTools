@@ -6,7 +6,7 @@ Required input:
 
 -ModNumber = The modnumber from the steam page.
 
-Recommended to use in tandem with Get-Arma3ShadowMod
+Recommended to use in tandem with Get-Arma3ModDependencies
 
 #>
 
@@ -15,7 +15,7 @@ Recommended to use in tandem with Get-Arma3ShadowMod
 
 
 
-function Get-Arma3LastUpdated {
+function Update-Arma3Mod {
     Param(
         [Parameter(Mandatory=$true)]
         [string[]]

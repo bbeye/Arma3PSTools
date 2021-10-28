@@ -19,7 +19,7 @@ ModName=ModNumber
 #$shadowModNumber=2414840966
 
 
-function Get-Arma3ShadowMod {
+function Get-Arma3ModDependencies {
     Param(
         [Parameter(Mandatory=$true)]
         [string[]]

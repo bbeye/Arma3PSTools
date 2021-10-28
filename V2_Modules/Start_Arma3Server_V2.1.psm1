@@ -23,6 +23,8 @@ $LaunchID="jtfa_ops"
 $Port="2302"
 $modlist="Automatic"
 
+
+        [ValidatePattern("\AAutomatic\z|\ADateAware\z|\ASpecificModlist\z")]
 #>
 
 
@@ -37,15 +39,17 @@ function Start-Arma3Server {
         $Port,
         
         [Parameter(Mandatory=$true)]
-        [ValidatePattern("\AAutomatic\z|\ADateAware\z|\ASpecificModlist\z")]
+        [ValidateSet("Automatic", "DateAware", "SpecificModlist")]
         [string[]]
         $modlistSelect,
 
         [Parameter(Mandatory=$true)]
-        [ValidatePattern("\AServer\z|\AClient\z")]
+        [ValidateSet("Server", "Client")]
         [string[]]
         $runType
     )
+
+Import-Module -name 'C:\Program Files\WindowsPowerShell\Modules\Arma3Modules\1.0.0.0\Arma3Modules.psm1'
 
 
 $Date = (Get-Date -Format yyyyMMdd)
@@ -67,7 +71,7 @@ $HeadlessMods="@asm"
 #TEST VARIABLES#
 $LaunchID="Test2"
 $port=2302 #,2402,2602,2702
-$modlist="Automatic" #$args[2] #'Automatic','DateAware','SpecificModlist'
+$modlistSelect="Automatic" #$args[2] #'Automatic','DateAware','SpecificModlist'
 $runtype="Client"
 #
 #
@@ -88,21 +92,23 @@ $runtype="Client"
         } 
         else 
         {
-        #Stop-Process -id $processID
-        Get-Process -id $processID
+        Stop-Process -id $processID
+        #Get-Process -id $processID
         }
     }
 
 
-#Building the modlist
+#Building the modlist, and checking for updates
 
 if ($runType -eq "Client") {
-    $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $HeadlessMods -LaunchID $LaunchID -RunType $modlist -Quiet -NoUpdate -ErrorAction Stop
+    $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $HeadlessMods -modlistSelect $modlistSelect -LaunchID $LaunchID -Quiet -ErrorAction Stop
 	
 
 } elseif ($runType -eq "Server"){
-    $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $ServerMods -LaunchID $LaunchID -RunType $modlist -Quiet -NoUpdate -ErrorAction Stop
+    $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $ServerMods -modlistSelect $modlistSelect -LaunchID $LaunchID -Quiet -ErrorAction Stop
 }
+
+
 
 
 #The final command

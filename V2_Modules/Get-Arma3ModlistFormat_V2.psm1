@@ -8,13 +8,15 @@ $modlistSelect = Sets the modlist to grab:
     Automatic - Pulls modlist.txt from $LaunchID directory
     DateAware - Pulls modlist_MM_DD_YYYY.txt from  #LaunchID directory
     SpecificModlist - Allows user to select modlist at time of run
+
+
 $NoUpdate = Will not update mods
 $Quiet = Will not show mod date information; only outputs modlist
 
 
 #>
 
-import-module Get-Arma3LastUpdated
+import-module Update-Arma3Mod
 
 
 function Get-Arma3ModlistFormat {
@@ -67,9 +69,9 @@ function Get-Arma3ModlistFormat {
             if ($NoUpdate){
             }
             elseif ($Quiet) {
-                Get-Arma3LastUpdated -modNumber $modnumber | Out-Null
+                Update-Arma3Mod -modNumber $modnumber | Out-Null
             } else {
-                Get-Arma3LastUpdated -modNumber $modnumber
+                Update-Arma3Mod -modNumber $modnumber
                 }
 
 
