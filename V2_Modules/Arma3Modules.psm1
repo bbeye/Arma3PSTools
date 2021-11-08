@@ -26,8 +26,8 @@ test
     )
     
 
-    $modsLocation = "C:\steamcmd\steamapps\workshop\content\107410\"
-    $steamCMD = "C:\steamcmd"
+    $modsLocation = "$($env:steamCMDPATH)steamapps\workshop\content\107410\"
+    $steamCMD = "$($env:steamCMDPATH)"
     $timeUpdatedLocally = (get-childitem $modsLocation | where Name -EQ $ModNumber).LastWriteTime
 
     $xml = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=1&publishedfileids[0]=$ModNumber"
@@ -58,12 +58,13 @@ test
 
     #Checking if mod exists at all
     if ($timeUpdatedLocally -eq $null) {
-     Write-Output "$modNumber does not exist, downloading"
+     Write-Output "$modNumber does not exist, downloaded on $(Get-Date)" | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
+     Write-Host "$modNumber does not exist, downloading"
      .\steamcmd.exe +login 100dollarrandy +workshop_download_item 107410 $modnumber validate +quit
 
     } #Checking for the last updated date was today or day before 
     elseif ($timeUpdatedSteam -gt (get-childitem $modsLocation | where Name -EQ $ModNumber).LastWriteTime) {
-        Write-Output "$modNumber last updated on $timeUpdatedSteam"
+        Write-Output "$modNumber last updated on $timeUpdatedSteam, updated on $(Get-Date)"  | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
         #Checking if the mod has already been updated today
             Write-Output "Mod updating"
             #mod updated in steam, not updated locally yet, download mods
@@ -310,11 +311,11 @@ $modlist="Automatic"
 
 #Refreshes modules per any updates.
 
-Import-Module -name 'C:\Program Files\WindowsPowerShell\Modules\Arma3Modules\1.0.0.0\Arma3Modules.psm1'
+Import-Module -name 'C:\Program Files\WindowsPowerShell\Modules\Arma3Modules\Arma3Modules.psm1'
 
 
 $Date = (Get-Date -Format yyyyMMdd)
-$RepoPath=           "C:\SteamCMD\steamapps\workshop\content\107410\"           #Mods location
+$RepoPath=           "$($env:steamCMDPATH)steamapps\workshop\content\107410\"           #Mods location
 $serverExeName=      "arma3server.exe"                                         #64-bit version would be arma3server_x64.exe
 $ArmaPath=           "$($env:ARMAPATH)servers\$LaunchID"                                   #Executable location
 $serverConfigPath=   "$($env:ARMAPATH)configs\$LaunchID\$($LaunchID)_server.cfg"   #Server Config File Path
@@ -361,13 +362,20 @@ $runtype="Client"
 
 #Building the modlist, and checking for updates
 
+$modlist = Get-Content "$($env:ARMAPATH)\configs\$($LaunchID)\modlist.txt" -raw
+Write-Host ""
+Write-Host "Loading and updating the following mods: "
+Write-Host ""
+Write-Host $modlist
+
 if ($runType -eq "Client") {
     $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $HeadlessMods -modlistSelect $modlistSelect -LaunchID $LaunchID -Quiet -ErrorAction Stop
 	
 
-} elseif ($runType -eq "Server"){
+} elseif ($runType -eq "Server") {
     $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $ServerMods -modlistSelect $modlistSelect -LaunchID $LaunchID -Quiet -ErrorAction Stop
 }
+
 
 
 
@@ -396,6 +404,8 @@ if ($runType -eq "Client") {
 
 Set-Location $ArmaPath
 
+Write-Host "Starting server..."
+Sleep 5
 
 Start-Process  .\arma3server.exe -ArgumentList $argumentlist -WindowStyle Minimized
 
@@ -421,7 +431,7 @@ Start-Process  .\arma3server.exe -ArgumentList $argumentlist -WindowStyle Minimi
 
 #>
 
-
+}
 
 
 
@@ -547,6 +557,4 @@ function Write-Color {
             }
         } Until ($Saved -eq $true -or $Retry -ge $LogRetry)
     }
-}
-
 }
