@@ -58,12 +58,13 @@ test
 
     #Checking if mod exists at all
     if ($timeUpdatedLocally -eq $null) {
-     Write-Output "$modNumber does not exist, downloading"
+     Write-Output "$modNumber does not exist, downloaded on $(Get-Date)" | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
+     Write-Host "$modNumber does not exist, downloading"
      .\steamcmd.exe +login 100dollarrandy +workshop_download_item 107410 $modnumber validate +quit
 
     } #Checking for the last updated date was today or day before 
     elseif ($timeUpdatedSteam -gt (get-childitem $modsLocation | where Name -EQ $ModNumber).LastWriteTime) {
-        Write-Output "$modNumber last updated on $timeUpdatedSteam"
+        Write-Output "$modNumber last updated on $timeUpdatedSteam, updated on $(Get-Date)"  | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
         #Checking if the mod has already been updated today
             Write-Output "Mod updating"
             #mod updated in steam, not updated locally yet, download mods
@@ -310,7 +311,7 @@ $modlist="Automatic"
 
 #Refreshes modules per any updates.
 
-Import-Module -name 'C:\Program Files\WindowsPowerShell\Modules\Arma3Modules\1.0.0.0\Arma3Modules.psm1'
+Import-Module -name 'C:\Program Files\WindowsPowerShell\Modules\Arma3Modules\Arma3Modules.psm1'
 
 
 $Date = (Get-Date -Format yyyyMMdd)
@@ -361,14 +362,19 @@ $runtype="Client"
 
 #Building the modlist, and checking for updates
 
+$modlist = Get-Content "$($env:ARMAPATH)\configs\$($LaunchID)\modlist.txt" -raw
+Write-Host ""
+Write-Host "Loading and updating the following mods: "
+Write-Host ""
+Write-Host $modlist
+
 if ($runType -eq "Client") {
     $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $HeadlessMods -modlistSelect $modlistSelect -LaunchID $LaunchID -Quiet -ErrorAction Stop
 	
 
-} elseif ($runType -eq "Server"){
+} elseif ($runType -eq "Server") {
     $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $ServerMods -modlistSelect $modlistSelect -LaunchID $LaunchID -Quiet -ErrorAction Stop
 }
-
 
 
 
@@ -404,6 +410,9 @@ Start-Process  .\arma3server.exe -ArgumentList $argumentlist -WindowStyle Minimi
     $PriorityFilter="%$LaunchID\\arma3server.exe"
     Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`""| ForEach-Object { $_.SetPriority(128) }
 
+Write-Host "Starting server..."
+Sleep 5
+
 
 <#
 -port=$Port 
@@ -421,8 +430,7 @@ Start-Process  .\arma3server.exe -ArgumentList $argumentlist -WindowStyle Minimi
 
 #>
 
-
-
+}
 
 
 #Don't mind meeeeeee
@@ -537,16 +545,4 @@ function Write-Color {
                 } else {
                     "$TextToFile" | Out-File -FilePath $LogFile -Encoding $Encoding -Append -ErrorAction Stop -WhatIf:$false
                 }
-                $Saved = $true
-            } catch {
-                if ($Saved -eq $false -and $Retry -eq $LogRetry) {
-                    $PSCmdlet.WriteError($_)
-                } else {
-                    Write-Warning "Write-Color - Couldn't write to log file $($_.Exception.Message). Retrying... ($Retry/$LogRetry)"
-                }
-            }
-        } Until ($Saved -eq $true -or $Retry -ge $LogRetry)
-    }
-}
-
-}
+                $Saved = $tr
