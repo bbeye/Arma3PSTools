@@ -15,7 +15,7 @@ ForEach ($mod in $modlist) {
     $modnumber = $mod.Split("=")[-1]
     $modname = $mod.Split("=")[0]
     echo "DOWNLOADING $modname"
-    D:\SteamCMD.GUI\steamcmd.exe +login Iceberg_Gaming_Team +workshop_download_item 107410 $modnumber validate +quit
+    Update-Arma3Mod -modNumber $modnumber
     }
 
     

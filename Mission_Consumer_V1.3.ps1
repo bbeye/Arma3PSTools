@@ -7,27 +7,13 @@
     Fixed error allowing invalid mission date time to be uploaded
     Updated logic to move any uploaded zip to Archive before proceeding
 #>
+Start-Transcript -path D:\Arma3\missions\iceberg_sideop\Automation\Archive\RandysModConsumer.log -append
 
 
-Function Clean-AutomationFolder {  
-    foreach ($item in Get-ChildItem $FileLocation) {
-        if ($item.name -ne "Archive" -and $item.extension -ne ".txt" -and $item.Name -ne "Modlists") 
-            {
-                echo $item.FullName
-                Remove-Item $item.FullName -recurse -Force
-            }
-        }
-
-}
-
-Start-Transcript -path "$($env:ARMAPATH)missions\iceberg_sideop\Automation\Archive\RandysModConsumer.log" -append
-
-
-
-$SideOpsMissionDir = "$($env:ARMAPATH)Missions\iceberg_sideop"
-$FileLocation = "$($env:ARMAPATH)missions\iceberg_sideop\Automation"
-$ArchivePath = "$($env:ARMAPATH)missions\iceberg_sideop\Automation\Archive"
-$SideOpsModlistDir = "$($env:ARMAPATH)configs\iceberg_sideop"
+$SideOpsMissionDir = "D:\Arma3\missions\iceberg_sideop\"
+$FileLocation = "D:\Arma3\missions\iceberg_sideop\Automation"
+$ArchivePath = "D:\Arma3\missions\iceberg_sideop\Automation\Archive"
+$SideOpsModlistDir = "D:\Arma3\configs\17th_Test"
 
 $currentDate = (Get-Date -format 'yyyyMMdd_hhmm')
 
@@ -79,11 +65,16 @@ $DateCheck = ""
    $TaskName = ""
 
     
-   $ZipFileName = (Get-ChildItem $FileLocation *.zip)
+    $ZipFileName = (Get-ChildItem $FileLocation *.zip)
+        if ($ZipFileName -eq $null) {
+            Exit
+        }
     $ZipFileDirName = $ZipFileName.FullName.Split(".",2)[0]
     Expand-Archive "$FileLocation\$ZipFileName" -DestinationPath "$ZipFileDirName"
     
     Move-Item $ZipFileName.FullName -Destination "$ArchivePath\$ZipFileName uploaded $($currentDate)CST" -Force
+        
+    Write-Host Archiving and Expanding
         
 
 #Checking if ZIP file has requisite mods
@@ -96,6 +87,7 @@ $DateCheck = ""
         if (Test-Path (Get-ChildItem $ZipfileDirname\modlist*.* -Recurse)) 
         {
                 $ModlistFileSize = Get-ChildItem $ZipfileDirname\modlist*.* -Recurse
+                Write-Host $ModlistFileSize.Length
                 Write-Host There is a modfile. It is $ModlistFileSize.Length bits. The limit is 6500. 
                     if ($ModlistFileSize.Length -ge 6500) {
                         New-Item "$FileLocation\$ZipFileName is too large.txt" -Force
@@ -104,7 +96,7 @@ $DateCheck = ""
             New-Item "$FileLocation\NoModFileFound in $ZipFileName.txt" -Force
             $ErrorAction = 1
             }
-        if (Test-Path (Get-ChildItem $ZipfileDirname\*.pbo -Recurse)) 
+        if (Test-Path (Get-ChildItem $ZipfileDirname\modlist*.* -Recurse)) 
         {
             $MissionFileName = (Get-ChildItem $ZipFileDirName\*.pbo -Recurse)
             Write-Host There is a Mission File.                        
@@ -115,14 +107,13 @@ $DateCheck = ""
 
         if ($ErrorAction -eq 1){
             Write-Host oh shit
-            Stop-Transcript
             Exit
             }
 
 #create the task name
     #this should be created via pulling in name of the pbo file in the uploaded folder
     #something like: 
-        $TaskName = (Get-ChildItem $ZipFileDirName *.pbo).Name.Split(".",2)[0] + " on " + (Get-ChildItem $ZipfileDirname modlist*.*).Name.Split("_",2)[-1]
+        $TaskName = (Get-ChildItem $ZipFileDirName *.pbo).Name.Split(".",2)[0] + " with " + (Get-ChildItem $ZipfileDirname modlist*.*).Name.Split("_",2)[-1]
         $ReceiptName = (Get-ChildItem $ZipFileDirName *.pbo).Name.Split(".",2)[0]
 
 
@@ -136,7 +127,7 @@ $DateCheck = ""
 
 #ACTIONS
     #Make new script to use new date time function OR cconvert modlist string to have no time
-    $TaskAction = New-ScheduledTaskAction -Execute "$($env:ARMAPATH)scripts\Iceberg Sideops\Iceberg Sideops - (Re)Launch - Date Aware.bat"
+    $TaskAction = New-ScheduledTaskAction -Execute "D:\Arma3\scripts\Iceberg Sideops\Iceberg Sideops - (Re)Launch - Date Aware.bat"
 
 #TRIGGERS
     #Pull this via name of modfile
@@ -145,33 +136,18 @@ $DateCheck = ""
         $ModlistFileName = Get-ChildItem $ZipfileDirname modlist*.* | Split-Path -leaf
         $Date = $ModlistFileName.Substring(8,10).Replace("_","/")
         $Time = $ModlistFileName.Substring(19,5).Replace("_",":")
-        
 
     #Crafting the triggers
-        try {
-        Write-Host "Setting trigger"
-        $TaskTrigger1 = New-ScheduledTaskTrigger -Once -At "$Date $Time"
-        } catch {
-        New-Item -Path $FileLocation -Name "$TaskName has invalid date or time, verify the modlist $ReceiptDate $ReceiptTime CST.txt" -ItemType "File" -ErrorAction Ignore
-        Clean-AutomationFolder
-        Stop-Transcript
-        Exit
-        }
+        $TaskTrigger1 = (New-ScheduledTaskTrigger -Once -At "$Date $Time")
     #Generating the Time of trigger for receipt
         $ReceiptDate = $Date.Replace("/","")   
         $ReceiptTime = $Time.Replace(":","")
        
 
 #create the task
-    try{
-    Register-ScheduledTask -Action $TaskAction -TaskName "$TaskName" -TaskPath "\SideOps Schedules\" -Trigger $TaskTrigger1 -Settings $TaskSettings -Force
-    } catch {
-    Clean-AutomationFolder
-    Stop-Transcript
-    Exit
-    }
-<# #######################  No longer needed with try logic ###################
 
+    Register-ScheduledTask -Action $TaskAction -TaskName "$TaskName" -TaskPath "\SideOps Schedules\" -Trigger $TaskTrigger1 -Settings $TaskSettings -Force
+   
 #Validate the task was created. If not, clean up and return error text file
     $invalidMissionTime = @()
     Get-ScheduledTask -TaskName "$TaskName" -ErrorVariable invalidMissionTime
@@ -179,68 +155,44 @@ $DateCheck = ""
         if ($invalidMissionTime.Count -gt 0) 
             {
             New-Item -Path $FileLocation -Name "$TaskName has invalid date or time, verify the modlist $ReceiptDate $ReceiptTime CST.txt" -ItemType "File"
-                #cleanup, then exit
-                foreach ($item in Get-ChildItem $FileLocation) {
-                    if ($item.name -ne "Archive" -and $item.extension -ne ".txt" -and $item.Name -ne "Modlists") 
-                        {
-                            echo $item.FullName
-                            Remove-Item $item.FullName -recurse -Force
-                        }
-                    }
             exit
             }
-#>
 
 #Check if task has been run; if so, disable
-    try{
-        $DateCheck = Get-ScheduledTaskInfo -TaskName "$TaskName" -TaskPath "\SideOps Schedules\"
-            if ($DateCheck.NextRunTime -eq $null) {
-                echo "null"
-            } else {
-                echo "Next run time is "$DateCheck.NextRunTime 
-                }
-    } catch {
-    Clean-AutomationFolder
-    Stop-Transcript
-    Exit
-    }
+    $DateCheck = Get-ScheduledTaskInfo -TaskName "$TaskName" -TaskPath "\SideOps Schedules\"
+        if ($DateCheck.NextRunTime -eq $null) {
+            echo "null"
+        } else {
+            echo "Next run time is "$DateCheck.NextRunTime 
+            }
+
 #Moving files to their place
     #Mission File
-        Copy-Item -Path $MissionFileName.FullName -Destination $SideOpsMissionDir -ErrorAction Ignore
+        Copy-Item -Path $MissionFileName.FullName -Destination $SideOpsMissionDir
     #Modlist
         #modifying name to fit date-aware script
         $ModlistYYYYMMDD = $ModlistFileName.Substring(0,18) + ".txt"
-        Copy-Item -Path "$ZipFileDirName\$ModlistFileName" -Destination "$SideOpsModlistDir\$ModlistYYYYMMDD" -ErrorAction Ignore
+        Copy-Item -Path "$ZipFileDirName\$ModlistFileName" -Destination "$SideOpsModlistDir\$ModlistYYYYMMDD"
 
-#Then we check for any updates to all mods
-
-<#
-$modlist = Get-Content (Get-ChildItem $ZipfileDirname modlist*.*)
-
-ForEach ($mod in $modlist) {
-    $modnumber = $mod.Split("=")[-1]
-    $modname = $mod.Split("=")[0]
-    echo "DOWNLOADING $modname"
-    Update-Arma3Mod -modNumber $modnumber 
-    }
-    #>
 #Create the Receipt
 
-    try{ 
-        New-Item -Path $FileLocation -Name "$ReceiptName ready on $ReceiptDate $ReceiptTime CST.txt" -ItemType "File" 
-    } catch {
-        New-Item -Path $FileLocation -Name "$ReceiptName already set for $ReceiptDate $ReceiptTime CST.txt" -ItemType "File" -ErrorAction Ignore
-    }
+    New-Item -Path $FileLocation -Name "$ReceiptName ready on $ReceiptDate $ReceiptTime CST.txt" -ItemType "File"
+
 #CLEAR THE Automation FOLDER but Archive Folder and any Text reports
 
-Write-host (Get-ScheduledTaskInfo -TaskName "$TaskName" -TaskPath "\SideOps Schedules\").taskname
-
-Clean-AutomationFolder
+    
+    foreach ($item in Get-ChildItem $FileLocation) {
+        if ($item.name -ne "Archive" -and $item.extension -ne ".txt" -and $item.Name -ne "Modlists") 
+            {
+                echo $item.FullName
+                Remove-Item $item.FullName -recurse -Force
+            }
+        }
 
 Stop-Transcript
 
-
-
+#Then we check for any updates to all mods
+C:\Arma3\scripts\Randys_Test_Bucket\Mission_Consumer_Mod_Updates_V1.ps1 $SideOpsModlistDir\$ModlistFileName
 
 Exit
 

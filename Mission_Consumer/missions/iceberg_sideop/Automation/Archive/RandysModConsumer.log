@@ -1,0 +1,84 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20211107222520
+Username: ICEBERG-GAMING\Administrator
+RunAs User: ICEBERG-GAMING\Administrator
+Machine: ICEBERG-GAMING (Microsoft Windows NT 10.0.14393.0)
+Host Application: powershell
+Process ID: 5520
+PSVersion: 5.1.14393.4583
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.14393.4583
+BuildVersion: 10.0.14393.4583
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+We did it
+We did it
+We did it
+We did it
+We did it
+PS>Unregister-Event -SourceIdentifier FileCreated
+PS D:\Arma3\scripts\Arma3PSTools\Mission_Consumer> .\Mission_Consumer_Watcher.ps1
+Package Consumed at 11/07/2021 22:30:28
+PS D:\Arma3\scripts\Arma3PSTools\Mission_Consumer> write-host test
+test
+**********************
+Windows PowerShell transcript start
+Start time: 20211107223245
+Username: ICEBERG-GAMING\Administrator
+RunAs User: ICEBERG-GAMING\Administrator
+Machine: ICEBERG-GAMING (Microsoft Windows NT 10.0.14393.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+Process ID: 6340
+PSVersion: 5.1.14393.4583
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.14393.4583
+BuildVersion: 10.0.14393.4583
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Package Consumed at 11/07/2021 22:32:45
+Package Consumed at 11/07/2021 22:35:20
+PS> Unregister-Event -SourceIdentifier FileCreated
+
+PS D:\Arma3\scripts\Arma3PSTools\Mission_Consumer> .\Mission_Consumer_Watcher.ps1
+Package Consumed at 11/07/2021 22:37:08
+PS D:\Arma3\scripts\Arma3PSTools\Mission_Consumer>  Unregister-Event -SourceIdentifier FileCreated
+
+PS D:\Arma3\scripts\Arma3PSTools\Mission_Consumer> .\Mission_Consumer_Watcher.ps1
+Package Consumed at 11/07/2021 22:39:00
+Package Consumed at 11/07/2021 22:39:13
+PS D:\Arma3\scripts\Arma3PSTools\Mission_Consumer> Get-ExecutionPolicy
+Unrestricted
+PS D:\Arma3\scripts\Arma3PSTools\Mission_Consumer> .\Mission_Consumer_Watcher.ps1
+Register-ObjectEvent : Cannot subscribe to the specified event. A subscriber with the source identifier 'FileCreated' 
+already exists.
+At D:\Arma3\scripts\Arma3PSTools\Mission_Consumer\Mission_Consumer_Watcher.ps1:16 char:14
++ ... onCreated = Register-ObjectEvent $fsw Created -SourceIdentifier FileC ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (System.IO.FileSystemWatcher:FileSystemWatcher) [Register-ObjectEvent], 
+ArgumentException
+    + FullyQualifiedErrorId : SUBSCRIBER_EXISTS,Microsoft.PowerShell.Commands.RegisterObjectEventCommand
+Register-ObjectEvent : Cannot subscribe to the specified event. A subscriber with the source identifier 'FileCreated'
+already exists.
+At D:\Arma3\scripts\Arma3PSTools\Mission_Consumer\Mission_Consumer_Watcher.ps1:16 char:14
++ ... onCreated = Register-ObjectEvent $fsw Created -SourceIdentifier FileC ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidArgument: (System.IO.FileSystemWatcher:FileSystemWatcher) [Register-ObjectEvent],
+    ArgumentException
+    + FullyQualifiedErrorId : SUBSCRIBER_EXISTS,Microsoft.PowerShell.Commands.RegisterObjectEventCommand
+
+Package Consumed at 11/07/2021 22:40:22
+PS D:\Arma3\scripts\Arma3PSTools\Mission_Consumer>     D:\Arma3\scripts\Arma3PSTools\Mission_Consumer\Mission_Consumer_V1.3.ps1
+Transcript started, output file is missions\iceberg_sideop\Automation\Archive\RandysModConsumer.log
+PS D:\Arma3\scripts\Arma3PSTools\Mission_Consumer>     D:\Arma3\scripts\Arma3PSTools\Mission_Consumer\Mission_Consumer_V1.3.ps1
+Transcript started, output file is missions\iceberg_sideop\Automation\Archive\RandysModConsumer.log
+PS D:\Arma3\scripts\Arma3PSTools\Mission_Consumer>     D:\Arma3\scripts\Arma3PSTools\Mission_Consumer\Mission_Consumer_V1.3.ps1
+Transcript started, output file is missions\iceberg_sideop\Automation\Archive\RandysModConsumer.log
+Package Consumed at 11/07/2021 22:41:59
+Package Consumed at 11/07/2021 22:42:46
