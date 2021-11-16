@@ -171,7 +171,6 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
         if ($timeUpdatedLocally -eq $null) {
             Write-Output "$modNumber does not exist, downloaded on $(Get-Date)" | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
             Write-Host "$modNumber does not exist, downloading"
-            cd $steamCMD
             .\steamcmd.exe +login iceberg_gaming_team +workshop_download_item 107410 $modnumber validate +quit
 
         } #Checking for the last updated date was today or day before 
@@ -344,17 +343,27 @@ $Bulk = Runs Bulk API check
         $modname = $mod.Split("=")[0]
         $modlist += ";$repoPath$($modnumber)"
 
-            if ($NoUpdate -or $Bulk){
+
+
+            if ($NoUpdate){
+            } elseif ($bulk) {
+                Update-Arma3ModBulk -modfile $ModFile
             } elseif ($Quiet) {
                 Update-Arma3Mod -modNumber $modnumber | Out-Null
             } else {
                 Update-Arma3Mod -modNumber $modnumber
                 }
+
+
+            <# DEPRECATED
+            Write-Color "LOADING ", "$modname $modnumber FAILED:", " Check $RepoPath for mod" -Color White,Red,Yellow
+            $ModlistError = 1
+            $MissingMods += "`n$modname = $modnumber"
+            ### Insert query to download single mod if needed
+            #>
         }
         
-    if ($bulk) {
-        Update-Arma3ModBulk -modfile $ModFile | Out-Null
-    }
+
         
     <# DEPRECATED
     #Until a single mod can be downloaded, this script will die if mod is not found.
@@ -501,11 +510,8 @@ if ($runType -eq "Client") {
 
 
 
-<<<<<<< HEAD
-=======
 
 
->>>>>>> 3df87cfb1bfae4b3ace53a054d3353d66a155a4e
 #The final command
 
     $serverNameParameter = "-name=$LaunchID"
@@ -540,9 +546,6 @@ Start-Process  .\arma3server.exe -ArgumentList $argumentlist -WindowStyle Minimi
     $PriorityFilter="%$LaunchID\\arma3server.exe"
     Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`""| ForEach-Object { $_.SetPriority(128) }
 
-Write-Host "Starting server..."
-Sleep 5
-
 
 <#
 -port=$Port 
@@ -561,10 +564,7 @@ Sleep 5
 #>
 
 }
-<<<<<<< HEAD
-=======
 
->>>>>>> 3df87cfb1bfae4b3ace53a054d3353d66a155a4e
 
 
 #Don't mind meeeeeee
@@ -679,9 +679,6 @@ function Write-Color {
                 } else {
                     "$TextToFile" | Out-File -FilePath $LogFile -Encoding $Encoding -Append -ErrorAction Stop -WhatIf:$false
                 }
-<<<<<<< HEAD
-                $Saved = $tr
-=======
                 $Saved = $true
             } catch {
                 if ($Saved -eq $false -and $Retry -eq $LogRetry) {
@@ -693,4 +690,3 @@ function Write-Color {
         } Until ($Saved -eq $true -or $Retry -ge $LogRetry)
     }
 }
->>>>>>> 3df87cfb1bfae4b3ace53a054d3353d66a155a4e
