@@ -26,8 +26,8 @@ test
     )
     
 
-    $modsLocation = "C:\steamcmd\steamapps\workshop\content\107410\"
-    $steamCMD = "C:\steamcmd"
+    $modsLocation = "$($env:steamCMDPATH)steamapps\workshop\content\107410\"
+    $steamCMD = "$($env:steamCMDPATH)"
     $timeUpdatedLocally = (get-childitem $modsLocation | where Name -EQ $ModNumber).LastWriteTime
 
     $xml = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=1&publishedfileids[0]=$ModNumber"
@@ -315,7 +315,7 @@ Import-Module -name 'C:\Program Files\WindowsPowerShell\Modules\Arma3Modules\Arm
 
 
 $Date = (Get-Date -Format yyyyMMdd)
-$RepoPath=           "C:\SteamCMD\steamapps\workshop\content\107410\"           #Mods location
+$RepoPath=           "$($env:steamCMDPATH)steamapps\workshop\content\107410\"           #Mods location
 $serverExeName=      "arma3server.exe"                                         #64-bit version would be arma3server_x64.exe
 $ArmaPath=           "$($env:ARMAPATH)servers\$LaunchID"                                   #Executable location
 $serverConfigPath=   "$($env:ARMAPATH)configs\$LaunchID\$($LaunchID)_server.cfg"   #Server Config File Path
@@ -378,6 +378,11 @@ if ($runType -eq "Client") {
 
 
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 3df87cfb1bfae4b3ace53a054d3353d66a155a4e
 #The final command
 
     $serverNameParameter = "-name=$LaunchID"
@@ -402,6 +407,8 @@ if ($runType -eq "Client") {
 
 Set-Location $ArmaPath
 
+Write-Host "Starting server..."
+Sleep 5
 
 Start-Process  .\arma3server.exe -ArgumentList $argumentlist -WindowStyle Minimized
 
@@ -431,6 +438,10 @@ Sleep 5
 #>
 
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3df87cfb1bfae4b3ace53a054d3353d66a155a4e
 
 
 #Don't mind meeeeeee
@@ -545,4 +556,18 @@ function Write-Color {
                 } else {
                     "$TextToFile" | Out-File -FilePath $LogFile -Encoding $Encoding -Append -ErrorAction Stop -WhatIf:$false
                 }
+<<<<<<< HEAD
                 $Saved = $tr
+=======
+                $Saved = $true
+            } catch {
+                if ($Saved -eq $false -and $Retry -eq $LogRetry) {
+                    $PSCmdlet.WriteError($_)
+                } else {
+                    Write-Warning "Write-Color - Couldn't write to log file $($_.Exception.Message). Retrying... ($Retry/$LogRetry)"
+                }
+            }
+        } Until ($Saved -eq $true -or $Retry -ge $LogRetry)
+    }
+}
+>>>>>>> 3df87cfb1bfae4b3ace53a054d3353d66a155a4e
