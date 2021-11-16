@@ -171,7 +171,6 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
         if ($timeUpdatedLocally -eq $null) {
             Write-Output "$modNumber does not exist, downloaded on $(Get-Date)" | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
             Write-Host "$modNumber does not exist, downloading"
-            cd $steamCMD
             .\steamcmd.exe +login iceberg_gaming_team +workshop_download_item 107410 $modnumber validate +quit
 
         } #Checking for the last updated date was today or day before 
@@ -344,17 +343,27 @@ $Bulk = Runs Bulk API check
         $modname = $mod.Split("=")[0]
         $modlist += ";$repoPath$($modnumber)"
 
-            if ($NoUpdate -or $Bulk){
+
+
+            if ($NoUpdate){
+            } elseif ($bulk) {
+                Update-Arma3ModBulk -modfile $ModFile
             } elseif ($Quiet) {
                 Update-Arma3Mod -modNumber $modnumber | Out-Null
             } else {
                 Update-Arma3Mod -modNumber $modnumber
                 }
+
+
+            <# DEPRECATED
+            Write-Color "LOADING ", "$modname $modnumber FAILED:", " Check $RepoPath for mod" -Color White,Red,Yellow
+            $ModlistError = 1
+            $MissingMods += "`n$modname = $modnumber"
+            ### Insert query to download single mod if needed
+            #>
         }
         
-    if ($bulk) {
-        Update-Arma3ModBulk -modfile $ModFile | Out-Null
-    }
+
         
     <# DEPRECATED
     #Until a single mod can be downloaded, this script will die if mod is not found.
