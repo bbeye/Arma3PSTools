@@ -18,6 +18,7 @@ test
 
 #$modnumber = 2414840966
 #$modnumber = 708250744
+#$modnumber = 463939057 
 
     Param(
         [Parameter(Mandatory=$true)]
@@ -74,7 +75,7 @@ test
      .\steamcmd.exe +login iceberg_gaming_team +workshop_download_item 107410 $modnumber validate +quit
 
     } #Checking for the last updated date was today or day before 
-    elseif ($timeUpdatedSteam -lt (get-childitem $modsLocation | where Name -EQ $ModNumber).LastWriteTime) {
+    elseif ($timeUpdatedSteam -gt (get-childitem $modsLocation | where Name -EQ $ModNumber).LastWriteTime) {
         Write-Output "$modNumber last updated on $timeUpdatedSteam, updated on $(Get-Date)"  | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
         #Checking if the mod has already been updated today
             Write-Output "Mod updating"
@@ -134,27 +135,20 @@ $APIOutput= Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteSto
 
 <#
 Used in testing
-$APIoutput = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=1&publishedfileids[0]=620260972"
+$APIoutput = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=1&publishedfileids[0]=463939057"
 /#>
 
 foreach ($mod in $APIOutput.response.publishedfiledetails) {
     $modnumber = $Mod.publishedfileid
-    if ($mod.result -eq 9) {
-        write-host "no mod found for $mod.publishedfileid"
-    } else {
-
-    $timeUpdatedLocally = (get-childitem $modsLocation | where Name -EQ $modNumber).LastWriteTime
+    if ($mod.result -eq 9) { <#if result equals 9, then mod does not exist or is unlisted, therefore, we attempt to scrape directly#>
+         $modlistRaw = wget "https://steamcommunity.com/sharedfiles/filedetails/?id=$modNumber"
         
-        #for unlisted mods, time_updated will be null, so we scrape the page manually
-        if ($mod.time_updated -eq $null) {
+        if ($modlistRaw.Content | select-string -pattern '<title>Steam\sCommunity\s::\sError<\/title>') {
+            #if at some point the mod no longer exists, as with ACEX = 708250744
+            write-host "no mod found for ID $($mod.publishedfileid)"
+            Return
 
-            $modlistRaw = wget "https://steamcommunity.com/sharedfiles/filedetails/?id=$modNumber"
-
-            if ($modlistRaw.Content | select-string -pattern '<title>Steam\sCommunity\s::\sError<\/title>') {
-                #if at some point the mod no longer exists, as with ACEX = 708250744
-                Return
-
-            } else {
+        } else {
 
             $pulledOutput = ($modlistRaw.Content | select-string -pattern '<div class="detailsStatRight">(?<date>\D.*)@.(?<time>\d.*)<\/div>' -AllMatches).Matches[1]
 
@@ -162,11 +156,15 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
        
             $timeUpdatedSteam = [datetime]::parseexact($timeUpdatedSteamUnparsed, 'MMM d h:mmtt', $null)
 
-            }
-        } else {
-            $timeUpdatedSteam = (Get-Date 01.01.1970)+([System.TimeSpan]::fromseconds($mod.time_updated))
-            }
+        }
+    } else {
+        $timeUpdatedSteam = (Get-Date 01.01.1970)+([System.TimeSpan]::fromseconds($mod.time_updated))
 
+
+    }
+
+       
+        $timeUpdatedLocally = (get-childitem $modsLocation | where Name -EQ $modNumber).LastWriteTime.ToUniversalTime()
         #Checking if mod exists at all on server
         if ($timeUpdatedLocally -eq $null) {
             Write-Output "$modNumber does not exist, downloaded on $(Get-Date)" | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
@@ -175,7 +173,7 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
             .\steamcmd.exe +login iceberg_gaming_team +workshop_download_item 107410 $modnumber validate +quit
 
         } #Checking for the last updated date was today or day before 
-        elseif ($timeUpdatedSteam -gt (get-childitem $modsLocation | where Name -EQ $ModNumber).LastWriteTime) {
+        elseif ($timeUpdatedSteam -gt $timeUpdatedLocally) {
             Write-Output "$modNumber last updated on $timeUpdatedSteam, updated on $(Get-Date)"  | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
             #Checking if the mod has already been updated today
                 Write-Output "Mod updating"
@@ -187,7 +185,8 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
         else {
         Write-Host "$modNumber last updated on Steam on $timeUpdatedSteam, local update was $timeUpdatedLocally. No Update Needed."
         }
-    }
+    
+    
 
     }
 
@@ -501,11 +500,7 @@ if ($runType -eq "Client") {
 
 
 
-<<<<<<< HEAD
-=======
 
-
->>>>>>> 3df87cfb1bfae4b3ace53a054d3353d66a155a4e
 #The final command
 
     $serverNameParameter = "-name=$LaunchID"
@@ -561,10 +556,9 @@ Sleep 5
 #>
 
 }
-<<<<<<< HEAD
-=======
 
->>>>>>> 3df87cfb1bfae4b3ace53a054d3353d66a155a4e
+
+
 
 
 #Don't mind meeeeeee
@@ -679,9 +673,9 @@ function Write-Color {
                 } else {
                     "$TextToFile" | Out-File -FilePath $LogFile -Encoding $Encoding -Append -ErrorAction Stop -WhatIf:$false
                 }
-<<<<<<< HEAD
+
                 $Saved = $tr
-=======
+
                 $Saved = $true
             } catch {
                 if ($Saved -eq $false -and $Retry -eq $LogRetry) {
@@ -693,4 +687,4 @@ function Write-Color {
         } Until ($Saved -eq $true -or $Retry -ge $LogRetry)
     }
 }
->>>>>>> 3df87cfb1bfae4b3ace53a054d3353d66a155a4e
+
