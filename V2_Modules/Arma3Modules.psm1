@@ -34,7 +34,7 @@ test
 
     $modsLocation = "$($env:steamCMDPATH)steamapps\workshop\content\107410\"
     $steamCMD = "$($env:steamCMDPATH)"
-    $timeUpdatedLocally = (get-childitem $modsLocation | where Name -EQ $ModNumber).LastWriteTime
+    $timeUpdatedLocally = (get-childitem $modsLocation | where Name -EQ $modNumber).LastWriteTime.ToUniversalTime()
 
     if ($NoCheck) {
         cd $steamCMD
@@ -75,7 +75,7 @@ test
      .\steamcmd.exe +login iceberg_gaming_team +workshop_download_item 107410 $modnumber validate +quit
 
     } #Checking for the last updated date was today or day before 
-    elseif ($timeUpdatedSteam -gt (get-childitem $modsLocation | where Name -EQ $ModNumber).LastWriteTime) {
+    elseif ($timeUpdatedSteam -gt $timeUpdatedLocally) {
         Write-Output "$modNumber last updated on $timeUpdatedSteam, updated on $(Get-Date)"  | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
         #Checking if the mod has already been updated today
             Write-Output "Mod updating"
@@ -561,6 +561,74 @@ Sleep 5
 
 
 
+function Stop-Arma3Server {
+<#
+Stop arma function
+
+
+
+Input Parameters:
+    LaunchID (This is the server name to set Config and Profile Data) ex: #17th_operations,17th_training
+    Port ex: #2302,2402,2602,2702 
+    ModlistType ex: #'Automatic','DateAware','SpecificModlist'
+    RunType ex: Server, Client
+
+Authored by Randy, with contributions from StackOverflow    
+
+Required Modules:
+function Get-Arma3ModlistFormat
+function 
+
+
+#Default Values for testing
+$LaunchID="iceberg_cdlc"
+$Port="2302"
+$modlist="Automatic"
+
+
+        [ValidatePattern("\AAutomatic\z|\ADateAware\z|\ASpecificModlist\z")]
+#>
+
+    Param(
+        [Parameter(Mandatory=$true)]
+        [string[]]
+        $launchID
+
+    )
+
+
+
+$Date = (Get-Date -Format yyyyMMdd)
+$RepoPath=           "$($env:steamCMDPATH)steamapps\workshop\content\107410\"           #Mods location
+$serverExeName=      "arma3server.exe"                                         #64-bit version would be arma3server_x64.exe
+$ArmaPath=           "$($env:ARMAPATH)servers\$LaunchID" #Executable location
+$configPath=         "$($env:ARMAPATH)configs\$LaunchID"                         
+$serverConfigPath=   "$($env:ARMAPATH)configs\$LaunchID\$($LaunchID)_server.cfg"   #Server Config File Path
+$basicConfigPath=    "$($env:ARMAPATH)configs\$LaunchID\$($LaunchID)_basic.cfg"     #Basic Config File Path
+$ProfilesPath=       "$($env:ARMAPATH)profiles\$LaunchID"                              #Profiles/Logs location
+
+
+
+
+#Verifying no other sessions exist
+    $PriorityFilter="%$LaunchID\\arma3server.exe"
+    $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
+    $runningInstances = @(Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"")
+    if ($runningInstances.Count -ne 0) 
+    {
+        $a = new-object -comobject wscript.shell 
+        $intAnswer = $a.popup("There are " + $runningInstances.count + " instances running for $LaunchID. Kill? Timeout in 5 seconds",5,"Title",4)
+        if ($intAnswer -eq 7) 
+        {
+        #exit
+        } 
+        else 
+        {
+        Stop-Process -id $processID
+        #Get-Process -id $processID
+        }
+    }
+}
 
 
 
