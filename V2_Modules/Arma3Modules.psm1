@@ -128,17 +128,23 @@ test
         }
 
 
-
+        
 $APIOutput= Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=$($i)$($modList)"
 
 
 
 <#
 Used in testing
-$APIoutput = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=1&publishedfileids[0]=463939057"
+$APIoutput = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=1&publishedfileids[0]=1110082605"
+$APIoutput = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=1&publishedfileids[0]=2676986586"
+
 /#>
 
+$mod = $APIOutput.response.publishedfiledetails
+
 foreach ($mod in $APIOutput.response.publishedfiledetails) {
+    Write-Host "Checking $($mod.publishedfileid)"
+    $timeUpdatedLocally = ""
     $modnumber = $Mod.publishedfileid
     if ($mod.result -eq 9) { <#if result equals 9, then mod does not exist or is unlisted, therefore, we attempt to scrape directly#>
          $modlistRaw = wget "https://steamcommunity.com/sharedfiles/filedetails/?id=$modNumber"
@@ -151,7 +157,9 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
         } else {
 
             $pulledOutput = ($modlistRaw.Content | select-string -pattern '<div class="detailsStatRight">(?<date>\D.*)@.(?<time>\d.*)<\/div>' -AllMatches).Matches[1]
-
+                if ($pulledOutput -is $null) {
+                    $pulledOutput = ($modlistRaw.Content | select-string -pattern '<div class="detailsStatRight">(?<date>\D.*)@.(?<time>\d.*)<\/div>' -AllMatches).Matches[0]
+                }
             $timeUpdatedSteamUnparsed = $pulledOutput.Groups[1].Value + $pulledOutput.Groups[2].Value
        
             $timeUpdatedSteam = [datetime]::parseexact($timeUpdatedSteamUnparsed, 'MMM d h:mmtt', $null)
@@ -159,21 +167,22 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
         }
     } else {
         $timeUpdatedSteam = (Get-Date 01.01.1970)+([System.TimeSpan]::fromseconds($mod.time_updated))
-
-
+        
     }
 
-       
-        $timeUpdatedLocally = (get-childitem $modsLocation | where Name -EQ $modNumber).LastWriteTime.ToUniversalTime()
+
         #Checking if mod exists at all on server
-        if ($timeUpdatedLocally -eq $null) {
+        if ((test-path "$($modsLocation)$($modnumber)") -eq $false) {
             Write-Output "$modNumber does not exist, downloaded on $(Get-Date)" | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
             Write-Host "$modNumber does not exist, downloading"
             cd $steamCMD
             .\steamcmd.exe +login iceberg_gaming_team +workshop_download_item 107410 $modnumber validate +quit
 
         } #Checking for the last updated date was today or day before 
-        elseif ($timeUpdatedSteam -gt $timeUpdatedLocally) {
+               
+        $timeUpdatedLocally = (get-childitem $modsLocation | where Name -EQ $modNumber).LastWriteTime.ToUniversalTime()
+
+        if ($timeUpdatedSteam -gt $timeUpdatedLocally) {
             Write-Output "$modNumber last updated on $timeUpdatedSteam, updated on $(Get-Date)"  | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
             #Checking if the mod has already been updated today
                 Write-Output "Mod updating"
@@ -462,22 +471,24 @@ $runtype="Client"
 #>
 
 
-#Verifying no other sessions exist
-    $PriorityFilter="%$LaunchID\\arma3server.exe"
-    $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
-    $runningInstances = @(Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"")
-    if ($runningInstances.Count -ne 0) 
-    {
-        $a = new-object -comobject wscript.shell 
-        $intAnswer = $a.popup("There are " + $runningInstances.count + " instances running for $LaunchID. Kill? Timeout in 10 seconds",10,"Title",4)
-        if ($intAnswer -eq 7) 
+    #Verifying no other sessions exist if server RunType
+    if ($runtype -eq "Server") {
+        $PriorityFilter="%$LaunchID\\arma3server.exe"
+        $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
+        $runningInstances = @(Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"")
+        if ($runningInstances.Count -ne 0) 
         {
-        #exit
-        } 
-        else 
-        {
-        Stop-Process -id $processID
-        #Get-Process -id $processID
+            $a = new-object -comobject wscript.shell 
+            $intAnswer = $a.popup("There are " + $runningInstances.count + " instances running for $LaunchID. Kill? Timeout in 10 seconds",10,"Title",4)
+            if ($intAnswer -eq 7) 
+            {
+            #exit
+            } 
+            else 
+            {
+            Stop-Process -id $processID
+            #Get-Process -id $processID
+            }
         }
     }
 
