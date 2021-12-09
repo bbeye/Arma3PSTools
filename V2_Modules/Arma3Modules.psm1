@@ -157,7 +157,7 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
         } else {
 
             $pulledOutput = ($modlistRaw.Content | select-string -pattern '<div class="detailsStatRight">(?<date>\D.*)@.(?<time>\d.*)<\/div>' -AllMatches).Matches[1]
-                if ($pulledOutput -is $null) {
+                if ($pulledOutput -eq $null) {
                     $pulledOutput = ($modlistRaw.Content | select-string -pattern '<div class="detailsStatRight">(?<date>\D.*)@.(?<time>\d.*)<\/div>' -AllMatches).Matches[0]
                 }
             $timeUpdatedSteamUnparsed = $pulledOutput.Groups[1].Value + $pulledOutput.Groups[2].Value
