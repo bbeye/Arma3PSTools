@@ -143,7 +143,7 @@ $APIoutput = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteSt
 $mod = $APIOutput.response.publishedfiledetails
 
 foreach ($mod in $APIOutput.response.publishedfiledetails) {
-    Write-Host "Checking $($mod.publishedfileid)"
+    #Write-Host "Checking $($mod.publishedfileid)"
     $timeUpdatedLocally = ""
     $modnumber = $Mod.publishedfileid
     if ($mod.result -eq 9) { <#if result equals 9, then mod does not exist or is unlisted, therefore, we attempt to scrape directly#>
@@ -402,9 +402,9 @@ function
 
 
 #Default Values for testing
-$LaunchID="iceberg_cdlc"
+$LaunchID="iceberg_persistent"
 $Port="2302"
-$modlist="Automatic"
+$modlistSelect="Automatic"
 
 
         [ValidatePattern("\AAutomatic\z|\ADateAware\z|\ASpecificModlist\z")]
@@ -447,13 +447,13 @@ $ProfilesPath=       "$($env:ARMAPATH)profiles\$LaunchID"                       
 
 # Server Mods
 if ( test-path $configPath\servermods.txt) {
-    $serverMods= (gc $configPath\servermods.txt) -join ";"
+    $ServerMods= (gc $configPath\servermods.txt) -join ";"
     } else {
     $ServerMods="@asm;@AdvancedTowing;@AdvancedSlingloading;@DisableBI"
     }
 
 if ( test-path $configPath\HCmods.txt) {
-    $HCMods= (gc $configPath\servermods.txt) -join ";"
+    $HCMods= (gc $configPath\HCmods.txt) -join ";"
     } else {
     $HCMods="@asm"
     }
@@ -466,12 +466,14 @@ $LaunchID="iceberg_cdlc"
 $port=2302 #,2402,2602,2702
 $modlistSelect="Automatic" #$args[2] #'Automatic','DateAware','SpecificModlist'
 $runtype="Client"
+$runtype="Server"
 #
 #
 #>
 
 
     #Verifying no other sessions exist if server RunType
+    echo test
     if ($runtype -eq "Server") {
         $PriorityFilter="%$LaunchID\\arma3server.exe"
         $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
@@ -502,7 +504,7 @@ Write-Host ""
 Write-Host $modlist
 
 if ($runType -eq "Client") {
-    $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $HeadlessMods -modlistSelect $modlistSelect -LaunchID $LaunchID -Quiet -Bulk -ErrorAction Stop
+    $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $HCMods -modlistSelect $modlistSelect -LaunchID $LaunchID -Quiet -NoUpdate -ErrorAction Stop
 	
 
 } elseif ($runType -eq "Server") {
