@@ -57,7 +57,7 @@ test
             $timeUpdatedSteamUnparsed = $pulledOutput.Groups[1].Value + $pulledOutput.Groups[2].Value
        
         
-            $timeUpdatedSteam = [datetime]::parseexact($timeUpdatedSteamUnparsed, 'MMM d h:mmtt', $null)
+            $timeUpdatedSteam = [datetime]"$timeUpdatedSteamUnparsed"
             }
         } else {
     
@@ -136,7 +136,7 @@ $APIOutput= Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteSto
 <#
 Used in testing
 $APIoutput = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=1&publishedfileids[0]=1110082605"
-$APIoutput = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=1&publishedfileids[0]=2676986586"
+$APIoutput = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=1&publishedfileids[0]=2429902861"
 
 /#>
 
@@ -161,9 +161,8 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
                     $pulledOutput = ($modlistRaw.Content | select-string -pattern '<div class="detailsStatRight">(?<date>\D.*)@.(?<time>\d.*)<\/div>' -AllMatches).Matches[0]
                 }
             $timeUpdatedSteamUnparsed = $pulledOutput.Groups[1].Value + $pulledOutput.Groups[2].Value
-       
-            $timeUpdatedSteam = [datetime]::parseexact($timeUpdatedSteamUnparsed, 'MMM d h:mmtt', $null)
 
+            $timeUpdatedSteam = [datetime]"$timeUpdatedSteamUnparsed"
         }
     } else {
         $timeUpdatedSteam = (Get-Date 01.01.1970)+([System.TimeSpan]::fromseconds($mod.time_updated))
@@ -473,7 +472,7 @@ $runtype="Server"
 
 
     #Verifying no other sessions exist if server RunType
-    echo test
+
     if ($runtype -eq "Server") {
         $PriorityFilter="%$LaunchID\\arma3server.exe"
         $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
@@ -548,7 +547,7 @@ Start-Process  .\arma3server.exe -ArgumentList $argumentlist -WindowStyle Minimi
     $PriorityFilter="%$LaunchID\\arma3server.exe"
     Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`""| ForEach-Object { $_.SetPriority(128) }
 
-Write-Host "Starting server..."
+Write-Host "Starting $runtype..."
 Sleep 5
 
 
