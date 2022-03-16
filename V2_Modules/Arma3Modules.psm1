@@ -107,7 +107,9 @@ test
   Param(
         [Parameter(Mandatory=$true)]
         [string[]]
-        $ModFile
+        $ModFile,
+        [Parameter(Mandatory=$false)]
+        [switch]$OutputRequired
     )
 
         
@@ -192,6 +194,10 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
         } 
         else {
         Write-Host "$modNumber last updated on Steam on $timeUpdatedSteam, local update was $timeUpdatedLocally. No Update Needed."
+
+        if ($OutputRequired) {
+            Write-Output "$modNumber last updated on Steam on $timeUpdatedSteam, local update was $timeUpdatedLocally. No Update Needed."
+        }
         }
     
     
@@ -436,7 +442,7 @@ Import-Module -name 'C:\Program Files\WindowsPowerShell\Modules\Arma3Modules\Arm
 
 $Date = (Get-Date -Format yyyyMMdd)
 $RepoPath=           "$($env:steamCMDPATH)steamapps\workshop\content\107410\"           #Mods location
-$serverExeName=      "arma3server.exe"                                         #64-bit version would be arma3server_x64.exe
+$serverExeName=      "arma3server_x64.exe"                                         #64-bit version would be arma3server_x64.exe
 $ArmaPath=           "$($env:ARMAPATH)servers\$LaunchID" #Executable location
 $configPath=         "$($env:ARMAPATH)configs\$LaunchID"                         
 $serverConfigPath=   "$($env:ARMAPATH)configs\$LaunchID\$($LaunchID)_server.cfg"   #Server Config File Path
@@ -474,7 +480,7 @@ $runtype="Server"
     #Verifying no other sessions exist if server RunType
 
     if ($runtype -eq "Server") {
-        $PriorityFilter="%$LaunchID\\arma3server.exe"
+        $PriorityFilter="%$LaunchID\\arma3server_x64.exe"
         $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
         $runningInstances = @(Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"")
         if ($runningInstances.Count -ne 0) 
@@ -540,11 +546,11 @@ Set-Location $ArmaPath
 Write-Host "Starting server..."
 Sleep 5
 
-Start-Process  .\arma3server.exe -ArgumentList $argumentlist -WindowStyle Minimized
+Start-Process  .\arma3server_x64.exe -ArgumentList $argumentlist -WindowStyle Minimized
 
 #Setting priority of Executables to High
     
-    $PriorityFilter="%$LaunchID\\arma3server.exe"
+    $PriorityFilter="%$LaunchID\\arma3server_x64.exe"
     Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`""| ForEach-Object { $_.SetPriority(128) }
 
 Write-Host "Starting $runtype..."
@@ -563,7 +569,7 @@ Sleep 5
 -mod=$ArmaMods"
 
 
-#start /min "iceberg_sideop" /realtime /affinity FF "D:\\arma3\\servers\\iceberg_sideop\\arma3server.exe" -port=2702 -profiles=$($env:ARMAPATH)profiles\iceberg_sideop\ -name=HC%i "-mod=@asm;"
+#start /min "iceberg_sideop" /realtime /affinity FF "D:\\arma3\\servers\\iceberg_sideop\\arma3server_x64.exe" -port=2702 -profiles=$($env:ARMAPATH)profiles\iceberg_sideop\ -name=HC%i "-mod=@asm;"
 
 #>
 
@@ -609,7 +615,7 @@ $modlist="Automatic"
 
 $Date = (Get-Date -Format yyyyMMdd)
 $RepoPath=           "$($env:steamCMDPATH)steamapps\workshop\content\107410\"           #Mods location
-$serverExeName=      "arma3server.exe"                                         #64-bit version would be arma3server_x64.exe
+$serverExeName=      "arma3server_x64.exe"                                         #64-bit version would be arma3server_x64.exe
 $ArmaPath=           "$($env:ARMAPATH)servers\$LaunchID" #Executable location
 $configPath=         "$($env:ARMAPATH)configs\$LaunchID"                         
 $serverConfigPath=   "$($env:ARMAPATH)configs\$LaunchID\$($LaunchID)_server.cfg"   #Server Config File Path
@@ -620,7 +626,7 @@ $ProfilesPath=       "$($env:ARMAPATH)profiles\$LaunchID"                       
 
 
 #Verifying no other sessions exist
-    $PriorityFilter="%$LaunchID\\arma3server.exe"
+    $PriorityFilter="%$LaunchID\\arma3server_x64.exe"
     $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
     $runningInstances = @(Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"")
     if ($runningInstances.Count -ne 0) 
