@@ -93,15 +93,16 @@ $DateCheck = ""
 
         $ErrorAction = ""
 
-        if (Test-Path (Get-ChildItem $ZipfileDirname\modlist*.* -Recurse)) 
+        try  
         {
+                Test-Path (Get-ChildItem $ZipfileDirname\modlist*.* -Recurse)
                 $ModlistFileSize = Get-ChildItem $ZipfileDirname\modlist*.* -Recurse
                 Write-Host There is a modfile. It is $ModlistFileSize.Length bits. The limit is 6500. 
                     if ($ModlistFileSize.Length -ge 6500) {
                         New-Item "$FileLocation\$ZipFileName is too large.txt" -Force
                     }                   
-        } else {
-            New-Item "$FileLocation\NoModFileFound in $ZipFileName.txt" -Force
+        } catch {
+            New-Item "$FileLocation\RECEIPT NoModFileFound or invalid format in $ZipFileName.txt" -Force
             $ErrorAction = 1
             }
         if (Test-Path (Get-ChildItem $ZipfileDirname\*.pbo -Recurse)) 
@@ -109,7 +110,7 @@ $DateCheck = ""
             $MissionFileName = (Get-ChildItem $ZipFileDirName\*.pbo -Recurse)
             Write-Host There is a Mission File.                        
         } else {
-            New-Item "$FileLocation\NoPBOFound in $ZipFileName.txt" -Force
+            New-Item "$FileLocation\RECEIPT NoPBOFound in $ZipFileName.txt" -Force
             $ErrorAction = 1
             } 
 
@@ -152,7 +153,7 @@ $DateCheck = ""
         Write-Host "Setting trigger"
         $TaskTrigger1 = New-ScheduledTaskTrigger -Once -At "$Date $Time"
         } catch {
-        New-Item -Path $FileLocation -Name "$TaskName has invalid date or time, verify the modlist $ReceiptDate $ReceiptTime CST.txt" -ItemType "File" -ErrorAction Ignore
+        New-Item -Path $FileLocation -Name "RECEIPT $TaskName has invalid date or time, verify the modlist $ReceiptDate $ReceiptTime CST.txt" -ItemType "File" -ErrorAction Ignore
         Clean-AutomationFolder
         Stop-Transcript
         Exit
@@ -226,10 +227,13 @@ ForEach ($mod in $modlist) {
     #>
 #Create the Receipt
 
+$ReceiptFileName = "RECEIPT $ReceiptName ready on $ReceiptDate $ReceiptTime CST.txt"
+
     try{ 
-        New-Item -Path $FileLocation -Name "$ReceiptName ready on $ReceiptDate $ReceiptTime CST.txt" -ItemType "File" 
+        New-Item -Path $FileLocation -Name $ReceiptName  -ItemType "File"
+        $Update = Update-Arma3ModBulk  "$SideOpsModlistDir\$ModlistYYYYMMDD" -OutputRequired| Out-String | Add-Content "$FileLocation\$ReceiptFileName"
     } catch {
-        New-Item -Path $FileLocation -Name "$ReceiptName already set for $ReceiptDate $ReceiptTime CST.txt" -ItemType "File" -ErrorAction Ignore
+        New-Item -Path $FileLocation -Name "RECEIPT $ReceiptName already set for $ReceiptDate $ReceiptTime CST.txt" -ItemType "File" -ErrorAction Ignore
     }
 #CLEAR THE Automation FOLDER but Archive Folder and any Text reports
 
