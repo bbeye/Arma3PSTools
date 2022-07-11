@@ -112,6 +112,7 @@ test
         [switch]$OutputRequired
     )
 
+# $modfile = "D:\Arma3\configs\iceberg_persistent\modlist.txt"
         
     $modsLocation = "$($env:steamCMDPATH)steamapps\workshop\content\107410\"
     $steamCMD = "$($env:steamCMDPATH)"
@@ -147,7 +148,7 @@ $mod = $APIOutput.response.publishedfiledetails
 foreach ($mod in $APIOutput.response.publishedfiledetails) {
     #Write-Host "Checking $($mod.publishedfileid)"
     $timeUpdatedLocally = ""
-    $modnumber = $Mod.publishedfileid
+    $modnumber = $Mod.publishedfileid  # $modnumber = 2429902861
     if ($mod.result -eq 9) { <#if result equals 9, then mod does not exist or is unlisted, therefore, we attempt to scrape directly#>
          $modlistRaw = wget "https://steamcommunity.com/sharedfiles/filedetails/?id=$modNumber"
         
@@ -164,7 +165,20 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
                 }
             $timeUpdatedSteamUnparsed = $pulledOutput.Groups[1].Value + $pulledOutput.Groups[2].Value
 
-            $timeUpdatedSteam = [datetime]"$timeUpdatedSteamUnparsed"
+            #Because Steam has inconsistent Date Times on their webpages, must convert to datetimes
+            #If conversion fails, set datetime to 2100 and force update anyways.
+            try {
+                $timeUpdatedSteam = [datetime]$timeUpdatedSteamUnparsed
+            } catch [System.Management.Automation.RuntimeException]{
+                try {
+                $timeUpdatedSteam = [datetime]::ParseExact($timeUpdatedSteamUnparsed, 'MMM dd h:mmtt', $null)
+                } catch {
+                $timeUpdatedSteam = [datetime]:: ParseExact(2100, 'yyyy', $null)
+                }
+            }
+
+
+
         }
     } else {
         $timeUpdatedSteam = (Get-Date 01.01.1970)+([System.TimeSpan]::fromseconds($mod.time_updated))
@@ -330,7 +344,7 @@ $Bulk = Runs Bulk API check
         [Parameter(Mandatory=$false)]
         [switch]$Bulk
     )
-
+    $Date = (Get-Date -Format yyyy_MM_dd)
     #Determining the selection of the modlist
 
     $ModlistError
@@ -440,7 +454,7 @@ $modlistSelect="Automatic"
 Import-Module -name 'C:\Program Files\WindowsPowerShell\Modules\Arma3Modules\Arma3Modules.psm1'
 
 
-$Date = (Get-Date -Format yyyyMMdd)
+$Date = (Get-Date -Format yyyy_MM_dd)
 $RepoPath=           "$($env:steamCMDPATH)steamapps\workshop\content\107410\"           #Mods location
 $serverExeName=      "arma3server_x64.exe"                                         #64-bit version would be arma3server_x64.exe
 $ArmaPath=           "$($env:ARMAPATH)servers\$LaunchID" #Executable location
@@ -480,7 +494,7 @@ $runtype="Server"
     #Verifying no other sessions exist if server RunType
 
     if ($runtype -eq "Server") {
-        $PriorityFilter="%$LaunchID\\arma3server_x64.exe"
+        $PriorityFilter="%$LaunchID\\$serverExeName"
         $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
         $runningInstances = @(Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"")
         if ($runningInstances.Count -ne 0) 
@@ -507,6 +521,9 @@ Write-Host ""
 Write-Host "Loading and updating the following mods: "
 Write-Host ""
 Write-Host $modlist
+
+# $modlistSelect = "DateAware"
+# $LaunchID = "iceberg_sideop"
 
 if ($runType -eq "Client") {
     $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $HCMods -modlistSelect $modlistSelect -LaunchID $LaunchID -Quiet -NoUpdate -ErrorAction Stop
@@ -546,11 +563,11 @@ Set-Location $ArmaPath
 Write-Host "Starting server..."
 Sleep 5
 
-Start-Process  .\arma3server_x64.exe -ArgumentList $argumentlist -WindowStyle Minimized
+Start-Process  .\$serverExeName -ArgumentList $argumentlist -WindowStyle Minimized
 
 #Setting priority of Executables to High
     
-    $PriorityFilter="%$LaunchID\\arma3server_x64.exe"
+    $PriorityFilter="%$LaunchID\\$serverExeName"
     Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`""| ForEach-Object { $_.SetPriority(128) }
 
 Write-Host "Starting $runtype..."
@@ -569,7 +586,7 @@ Sleep 5
 -mod=$ArmaMods"
 
 
-#start /min "iceberg_sideop" /realtime /affinity FF "D:\\arma3\\servers\\iceberg_sideop\\arma3server_x64.exe" -port=2702 -profiles=$($env:ARMAPATH)profiles\iceberg_sideop\ -name=HC%i "-mod=@asm;"
+#start /min "iceberg_sideop" /realtime /affinity FF "D:\\arma3\\servers\\iceberg_sideop\\arma3server.exe" -port=2702 -profiles=$($env:ARMAPATH)profiles\iceberg_sideop\ -name=HC%i "-mod=@asm;"
 
 #>
 
@@ -626,7 +643,7 @@ $ProfilesPath=       "$($env:ARMAPATH)profiles\$LaunchID"                       
 
 
 #Verifying no other sessions exist
-    $PriorityFilter="%$LaunchID\\arma3server_x64.exe"
+    $PriorityFilter="%$LaunchID\\$serverExeName"
     $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
     $runningInstances = @(Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"")
     if ($runningInstances.Count -ne 0) 
@@ -639,7 +656,7 @@ $ProfilesPath=       "$($env:ARMAPATH)profiles\$LaunchID"                       
         } 
         else 
         {
-        Stop-Process -id $processID
+        Stop-Process -id $processID -Force
         #Get-Process -id $processID
         }
     }
