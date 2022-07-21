@@ -57,7 +57,7 @@ test
             $timeUpdatedSteamUnparsed = $pulledOutput.Groups[1].Value + $pulledOutput.Groups[2].Value
        
         
-            $timeUpdatedSteam = [datetime]::parseexact($timeUpdatedSteamUnparsed, 'MMM d h:mmtt', $null)
+            $timeUpdatedSteam = [datetime]"$timeUpdatedSteamUnparsed"
             }
         } else {
     
@@ -107,7 +107,9 @@ test
   Param(
         [Parameter(Mandatory=$true)]
         [string[]]
-        $ModFile
+        $ModFile,
+        [Parameter(Mandatory=$false)]
+        [switch]$OutputRequired
     )
 
         
@@ -128,17 +130,23 @@ test
         }
 
 
-
+        
 $APIOutput= Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=$($i)$($modList)"
 
 
 
 <#
 Used in testing
-$APIoutput = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=1&publishedfileids[0]=463939057"
+$APIoutput = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=1&publishedfileids[0]=1110082605"
+$APIoutput = Invoke-RestMethod -uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' -Method Post -Body "itemcount=1&publishedfileids[0]=2429902861"
+
 /#>
 
+$mod = $APIOutput.response.publishedfiledetails
+
 foreach ($mod in $APIOutput.response.publishedfiledetails) {
+    #Write-Host "Checking $($mod.publishedfileid)"
+    $timeUpdatedLocally = ""
     $modnumber = $Mod.publishedfileid
     if ($mod.result -eq 9) { <#if result equals 9, then mod does not exist or is unlisted, therefore, we attempt to scrape directly#>
          $modlistRaw = wget "https://steamcommunity.com/sharedfiles/filedetails/?id=$modNumber"
@@ -151,29 +159,35 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
         } else {
 
             $pulledOutput = ($modlistRaw.Content | select-string -pattern '<div class="detailsStatRight">(?<date>\D.*)@.(?<time>\d.*)<\/div>' -AllMatches).Matches[1]
-
+                if ($pulledOutput -eq $null) {
+                    $pulledOutput = ($modlistRaw.Content | select-string -pattern '<div class="detailsStatRight">(?<date>\D.*)@.(?<time>\d.*)<\/div>' -AllMatches).Matches[0]
+                }
             $timeUpdatedSteamUnparsed = $pulledOutput.Groups[1].Value + $pulledOutput.Groups[2].Value
-       
-            $timeUpdatedSteam = [datetime]::parseexact($timeUpdatedSteamUnparsed, 'MMM d h:mmtt', $null)
+	   
+																										
 
+            $timeUpdatedSteam = [datetime]"$timeUpdatedSteamUnparsed"
         }
     } else {
         $timeUpdatedSteam = (Get-Date 01.01.1970)+([System.TimeSpan]::fromseconds($mod.time_updated))
-
+        
 
     }
 
-       
-        $timeUpdatedLocally = (get-childitem $modsLocation | where Name -EQ $modNumber).LastWriteTime.ToUniversalTime()
+
+																													   
         #Checking if mod exists at all on server
-        if ($timeUpdatedLocally -eq $null) {
+        if ((test-path "$($modsLocation)$($modnumber)") -eq $false) {
             Write-Output "$modNumber does not exist, downloaded on $(Get-Date)" | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
             Write-Host "$modNumber does not exist, downloading"
             cd $steamCMD
             .\steamcmd.exe +login iceberg_gaming_team +workshop_download_item 107410 $modnumber validate +quit
 
         } #Checking for the last updated date was today or day before 
-        elseif ($timeUpdatedSteam -gt $timeUpdatedLocally) {
+               
+        $timeUpdatedLocally = (get-childitem $modsLocation | where Name -EQ $modNumber).LastWriteTime.ToUniversalTime()
+
+        if ($timeUpdatedSteam -gt $timeUpdatedLocally) {
             Write-Output "$modNumber last updated on $timeUpdatedSteam, updated on $(Get-Date)"  | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
             #Checking if the mod has already been updated today
                 Write-Output "Mod updating"
@@ -184,6 +198,10 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
         } 
         else {
         Write-Host "$modNumber last updated on Steam on $timeUpdatedSteam, local update was $timeUpdatedLocally. No Update Needed."
+
+        if ($OutputRequired) {
+            Write-Output "$modNumber last updated on Steam on $timeUpdatedSteam, local update was $timeUpdatedLocally. No Update Needed."
+        }
         }
     
     
@@ -393,9 +411,9 @@ function
 
 
 #Default Values for testing
-$LaunchID="iceberg_cdlc"
-$Port="2302"
-$modlist="Automatic"
+$LaunchID="iceberg_persistent"
+$Port="2902"
+$modlistSelect="Automatic"
 
 
         [ValidatePattern("\AAutomatic\z|\ADateAware\z|\ASpecificModlist\z")]
@@ -428,7 +446,7 @@ Import-Module -name 'C:\Program Files\WindowsPowerShell\Modules\Arma3Modules\Arm
 
 $Date = (Get-Date -Format yyyyMMdd)
 $RepoPath=           "$($env:steamCMDPATH)steamapps\workshop\content\107410\"           #Mods location
-$serverExeName=      "arma3server.exe"                                         #64-bit version would be arma3server_x64.exe
+$serverExeName=      "arma3server_x64.exe"                                         #64-bit version would be arma3server_x64.exe
 $ArmaPath=           "$($env:ARMAPATH)servers\$LaunchID" #Executable location
 $configPath=         "$($env:ARMAPATH)configs\$LaunchID"                         
 $serverConfigPath=   "$($env:ARMAPATH)configs\$LaunchID\$($LaunchID)_server.cfg"   #Server Config File Path
@@ -438,60 +456,75 @@ $ProfilesPath=       "$($env:ARMAPATH)profiles\$LaunchID"                       
 
 # Server Mods
 if ( test-path $configPath\servermods.txt) {
-    $serverMods= (gc $configPath\servermods.txt) -join ";"
+    $ServerMods= (gc $configPath\servermods.txt) -join ";"
     } else {
-    $ServerMods="@asm;@AdvancedTowing;@AdvancedSlingloading;@DisableBI"
+    $ServerMods="@AdvancedTowing;@AdvancedSlingloading;@DisableBI"
     }
 
 if ( test-path $configPath\HCmods.txt) {
-    $HCMods= (gc $configPath\servermods.txt) -join ";"
+    $HCMods= (gc $configPath\HCmods.txt) -join ";"
     } else {
-    $HCMods="@asm"
+    $HCMods=""
     }
 
 <#
 #
 #
 #TEST VARIABLES#
-$LaunchID="iceberg_cdlc"
-$port=2302 #,2402,2602,2702
-$modlistSelect="Automatic" #$args[2] #'Automatic','DateAware','SpecificModlist'
+$LaunchID="17th_operations"
+$port=2902 #,2402,2602,2702
+$modlistSelect="SpecificModlist" #$args[2] #'Automatic','DateAware','SpecificModlist'
 $runtype="Client"
+$runtype="Server"
 #
 #
 #>
 
 
-#Verifying no other sessions exist
-    $PriorityFilter="%$LaunchID\\arma3server.exe"
-    $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
-    $runningInstances = @(Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"")
-    if ($runningInstances.Count -ne 0) 
-    {
-        $a = new-object -comobject wscript.shell 
-        $intAnswer = $a.popup("There are " + $runningInstances.count + " instances running for $LaunchID. Kill? Timeout in 10 seconds",10,"Title",4)
-        if ($intAnswer -eq 7) 
+    #Verifying no other sessions exist if server RunType
+
+    if ($runtype -eq "Server") {
+        $PriorityFilter="%$LaunchID\\$serverExeName"
+        $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
+        $runningInstances = @(Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"")
+        if ($runningInstances.Count -ne 0) 
+	 
+												 
+																																					
+							  
+		 
+			 
+		  
+			 
         {
-        #exit
-        } 
-        else 
-        {
-        Stop-Process -id $processID
-        #Get-Process -id $processID
+            $a = new-object -comobject wscript.shell 
+            $intAnswer = $a.popup("There are " + $runningInstances.count + " instances running for $LaunchID. Kill? Timeout in 10 seconds",10,"Title",4)
+            if ($intAnswer -eq 7) 
+            {
+            #exit
+            } 
+            else 
+            {
+            Stop-Process -id $processID
+            #Get-Process -id $processID
+            }
         }
     }
 
 
 #Building the modlist, and checking for updates
 
+if ($modlistSelect -eq "Automatic"){
+
 $modlist = Get-Content "$($env:ARMAPATH)\configs\$($LaunchID)\modlist.txt" -raw
 Write-Host ""
 Write-Host "Loading and updating the following mods: "
 Write-Host ""
 Write-Host $modlist
+}
 
 if ($runType -eq "Client") {
-    $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $HeadlessMods -modlistSelect $modlistSelect -LaunchID $LaunchID -Quiet -Bulk -ErrorAction Stop
+    $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $HCMods -modlistSelect $modlistSelect -LaunchID $LaunchID -Quiet -NoUpdate -ErrorAction Stop
 	
 
 } elseif ($runType -eq "Server") {
@@ -528,14 +561,14 @@ Set-Location $ArmaPath
 Write-Host "Starting server..."
 Sleep 5
 
-Start-Process  .\arma3server.exe -ArgumentList $argumentlist -WindowStyle Minimized
+Start-Process  .\$serverExeName -ArgumentList $argumentlist -WindowStyle Minimized
 
 #Setting priority of Executables to High
     
-    $PriorityFilter="%$LaunchID\\arma3server.exe"
+    $PriorityFilter="%$LaunchID\\$serverExeName"
     Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`""| ForEach-Object { $_.SetPriority(128) }
 
-Write-Host "Starting server..."
+Write-Host "Starting $runtype..."
 Sleep 5
 
 
@@ -557,7 +590,7 @@ Sleep 5
 
 }
 
-=======
+	   
 
 
 
@@ -600,7 +633,7 @@ $modlist="Automatic"
 
 $Date = (Get-Date -Format yyyyMMdd)
 $RepoPath=           "$($env:steamCMDPATH)steamapps\workshop\content\107410\"           #Mods location
-$serverExeName=      "arma3server.exe"                                         #64-bit version would be arma3server_x64.exe
+$serverExeName=      "arma3server_x64.exe"                                         #64-bit version would be arma3server_x64.exe
 $ArmaPath=           "$($env:ARMAPATH)servers\$LaunchID" #Executable location
 $configPath=         "$($env:ARMAPATH)configs\$LaunchID"                         
 $serverConfigPath=   "$($env:ARMAPATH)configs\$LaunchID\$($LaunchID)_server.cfg"   #Server Config File Path
@@ -611,7 +644,7 @@ $ProfilesPath=       "$($env:ARMAPATH)profiles\$LaunchID"                       
 
 
 #Verifying no other sessions exist
-    $PriorityFilter="%$LaunchID\\arma3server.exe"
+    $PriorityFilter="%$LaunchID\\$serverExeName"
     $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
     $runningInstances = @(Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"")
     if ($runningInstances.Count -ne 0) 

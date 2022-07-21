@@ -3,3 +3,6 @@
 
     [System.Environment]::SetEnvironmentVariable('STEAMCMDPATH', "D:\SteamCMD.GUI\", [System.EnvironmentVariableTarget]::Machine) #setting the machine's environment variable that all scripts will use
     [System.Environment]::SetEnvironmentVariable('STEAMCMDPATH', "D:\SteamCMD.GUI\", [System.EnvironmentVariableTarget]::Process) #setting the current process' environment variable that scripts will use
+
+    [System.Environment]::SetEnvironmentVariable('STEAMCMDUSER', "iceberg_gaming_team", [System.EnvironmentVariableTarget]::Machine) #setting the machine's environment variable that all scripts will use
+    [System.Environment]::SetEnvironmentVariable('STEAMCMDUSER', "iceberg_gaming_team", [System.EnvironmentVariableTarget]::Process) #setting the current process' environment variable that scripts will use
