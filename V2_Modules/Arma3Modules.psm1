@@ -112,6 +112,7 @@ test
         [switch]$OutputRequired
     )
 
+# $modfile = "D:\Arma3\configs\iceberg_persistent\modlist.txt"
         
     $modsLocation = "$($env:steamCMDPATH)steamapps\workshop\content\107410\"
     $steamCMD = "$($env:steamCMDPATH)"
@@ -148,6 +149,8 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
     #Write-Host "Checking $($mod.publishedfileid)"
     $timeUpdatedLocally = ""
     $modnumber = $Mod.publishedfileid
+    $modnumber = $Mod.publishedfileid  # $modnumber = 2429902861
+
     if ($mod.result -eq 9) { <#if result equals 9, then mod does not exist or is unlisted, therefore, we attempt to scrape directly#>
          $modlistRaw = wget "https://steamcommunity.com/sharedfiles/filedetails/?id=$modNumber"
         
@@ -163,19 +166,30 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
                     $pulledOutput = ($modlistRaw.Content | select-string -pattern '<div class="detailsStatRight">(?<date>\D.*)@.(?<time>\d.*)<\/div>' -AllMatches).Matches[0]
                 }
             $timeUpdatedSteamUnparsed = $pulledOutput.Groups[1].Value + $pulledOutput.Groups[2].Value
-	   
-																										
+
+
+            #Because Steam has inconsistent Date Times on their webpages, must convert to datetimes
+            #If conversion fails, set datetime to 2100 and force update anyways.
+            try {
+                $timeUpdatedSteam = [datetime]$timeUpdatedSteamUnparsed
+            } catch [System.Management.Automation.RuntimeException]{
+                try {
+                $timeUpdatedSteam = [datetime]::ParseExact($timeUpdatedSteamUnparsed, 'MMM dd h:mmtt', $null)
+                } catch {
+                $timeUpdatedSteam = [datetime]:: ParseExact(2100, 'yyyy', $null)
+                }
+            }
 
             $timeUpdatedSteam = [datetime]"$timeUpdatedSteamUnparsed"
         }
     } else {
         $timeUpdatedSteam = (Get-Date 01.01.1970)+([System.TimeSpan]::fromseconds($mod.time_updated))
-        
+
+    }
 
     }
 
 
-																													   
         #Checking if mod exists at all on server
         if ((test-path "$($modsLocation)$($modnumber)") -eq $false) {
             Write-Output "$modNumber does not exist, downloaded on $(Get-Date)" | Add-Content $env:ARMAPATH\Scripts\Update_Log.txt
@@ -207,9 +221,6 @@ foreach ($mod in $APIOutput.response.publishedfiledetails) {
     
 
     }
-
-
-}
 
 
 function Get-Arma3ModDependencies {
@@ -334,7 +345,7 @@ $Bulk = Runs Bulk API check
         [Parameter(Mandatory=$false)]
         [switch]$Bulk
     )
-
+    $Date = (Get-Date -Format yyyy_MM_dd)
     #Determining the selection of the modlist
 
     $ModlistError
@@ -413,6 +424,7 @@ function
 #Default Values for testing
 $LaunchID="iceberg_persistent"
 $Port="2902"
+$Port="2302"
 $modlistSelect="Automatic"
 
 
@@ -444,7 +456,7 @@ $modlistSelect="Automatic"
 Import-Module -name 'C:\Program Files\WindowsPowerShell\Modules\Arma3Modules\Arma3Modules.psm1'
 
 
-$Date = (Get-Date -Format yyyyMMdd)
+$Date = (Get-Date -Format yyyy_MM_dd)
 $RepoPath=           "$($env:steamCMDPATH)steamapps\workshop\content\107410\"           #Mods location
 $serverExeName=      "arma3server_x64.exe"                                         #64-bit version would be arma3server_x64.exe
 $ArmaPath=           "$($env:ARMAPATH)servers\$LaunchID" #Executable location
@@ -488,14 +500,7 @@ $runtype="Server"
         $processID = Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"" | Select-Object -expand processid
         $runningInstances = @(Get-WmiObject win32_process -filter "ExecutablePath LIKE `"$PriorityFilter`"")
         if ($runningInstances.Count -ne 0) 
-	 
-												 
-																																					
-							  
-		 
-			 
-		  
-			 
+
         {
             $a = new-object -comobject wscript.shell 
             $intAnswer = $a.popup("There are " + $runningInstances.count + " instances running for $LaunchID. Kill? Timeout in 10 seconds",10,"Title",4)
@@ -522,6 +527,9 @@ Write-Host "Loading and updating the following mods: "
 Write-Host ""
 Write-Host $modlist
 }
+
+# $modlistSelect = "DateAware"
+# $LaunchID = "iceberg_sideop"
 
 if ($runType -eq "Client") {
     $ArmaMods = Get-Arma3ModlistFormat -ServerModNames $HCMods -modlistSelect $modlistSelect -LaunchID $LaunchID -Quiet -NoUpdate -ErrorAction Stop
@@ -657,7 +665,7 @@ $ProfilesPath=       "$($env:ARMAPATH)profiles\$LaunchID"                       
         } 
         else 
         {
-        Stop-Process -id $processID
+        Stop-Process -id $processID -Force
         #Get-Process -id $processID
         }
     }
