@@ -422,7 +422,7 @@ function
 
 
 #Default Values for testing
-$LaunchID="iceberg_persistent"
+$LaunchID="17th_operations"
 $Port="2902"
 $Port="2302"
 $modlistSelect="Automatic"
@@ -464,6 +464,7 @@ $configPath=         "$($env:ARMAPATH)configs\$LaunchID"
 $serverConfigPath=   "$($env:ARMAPATH)configs\$LaunchID\$($LaunchID)_server.cfg"   #Server Config File Path
 $basicConfigPath=    "$($env:ARMAPATH)configs\$LaunchID\$($LaunchID)_basic.cfg"     #Basic Config File Path
 $ProfilesPath=       "$($env:ARMAPATH)profiles\$LaunchID"                              #Profiles/Logs location
+$serverPassword=     (gc $serverConfigPath | Select-String -Pattern '^password = "(.*)"').Matches.groups[1].value
 
 
 # Server Mods
