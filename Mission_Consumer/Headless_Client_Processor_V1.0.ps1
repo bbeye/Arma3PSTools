@@ -23,21 +23,19 @@ Function Clean-AutomationFolder {
 
 Start-Transcript -path "$($env:ARMAPATH)missions\iceberg_sideops\Automation\Archive\RandysModConsumer.log" -append
 
-
-
 $sideopsMissionDir = "$($env:ARMAPATH)Missions\iceberg_sideops"
 $FileLocation = "$($env:ARMAPATH)missions\iceberg_sideops\Automation"
 $ArchivePath = "$($env:ARMAPATH)missions\iceberg_sideops\Automation\Archive"
 $sideopsModlistDir = "$($env:ARMAPATH)configs\iceberg_sideops"
+
+
 
 $currentDate = (Get-Date -format 'yyyyMMdd_hhmm')
 
 
 
 $TaskName = ""
-
 $TaskSettings = ""
-
 $TaskAction = ""
 
 $ModlistFileName = ""
@@ -108,11 +106,12 @@ $DateCheck = ""
             New-Item "$FileLocation\RECEIPT NoModFileFound or invalid format in $ZipFileName.txt" -Force
             $ErrorAction = 1
             }
-        if (Test-Path (Get-ChildItem $ZipfileDirname\*.pbo -Recurse)) 
+        try 
         {
+            (Test-Path (Get-ChildItem "$ZipfileDirname\*.pbo" -Recurse)) 
             $MissionFileName = (Get-ChildItem $ZipFileDirName\*.pbo -Recurse)
             Write-Host There is a Mission File.                        
-        } else {
+        } catch {
             New-Item "$FileLocation\RECEIPT NoPBOFound in $ZipFileName.txt" -Force
             $ErrorAction = 1
             } 
